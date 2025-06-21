@@ -3,14 +3,15 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta
 
-# YouTube API Key from Streamlit Secrets
+# API Key
 API_KEY = st.secrets["API_KEY"]
 
+# URLs
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
 YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 
-# Streamlit UI
+# Streamlit setup
 st.set_page_config(layout="wide")
 st.title("🎯 YouTube Viral Topic Finder (True Crime Niche)")
 
@@ -19,7 +20,7 @@ days = st.slider("📅 Search videos from past days:", 1, 30, 7)
 min_subs, max_subs = st.slider("📊 Channel subscriber range:", 1000, 100000, (1000, 50000), step=1000)
 max_results_per_keyword = st.slider("🎬 Max videos per keyword:", 1, 10, 5)
 
-# 30 Highly Relevant True Crime Keywords
+# 50 highly relevant keywords
 keywords = [
     "missing persons", "cold case", "unsolved disappearances", "girl vanished", "boy went missing",
     "family disappeared", "child went missing", "vanished without a trace", "found after years",
@@ -27,10 +28,22 @@ keywords = [
     "mystery solved after years", "skeletal remains found", "creepy true crime", "true crime story",
     "tragic disappearance", "disturbing true story", "accidental discovery", "chilling case",
     "real unsolved case", "cold case solved", "abandoned clue", "body found in attic",
-    "found in lake", "jogger finds body", "child missing case", "parents never gave up", "found buried"
+    "found in lake", "jogger finds body", "child missing case", "parents never gave up", "found buried",
+    "missing teenager", "abduction case", "serial killer victim", "murder mystery", "crime documentary",
+    "body in suitcase", "kid vanished", "remains discovered", "case reopened", "tip cracked the case",
+    "witness disappeared", "DNA evidence", "unsolved murder", "vanished while hiking", "rural mystery",
+    "chilling confession", "true crime analysis", "killer confession", "left behind clues", "hidden remains"
 ]
 
-# Search
+# Helper to format numbers
+def human_format(num):
+    if num >= 1_000_000:
+        return f"{num/1_000_000:.1f}M"
+    elif num >= 1_000:
+        return f"{num/1_000:.1f}k"
+    return str(num)
+
+# Start search
 if st.button("🚀 Fetch Viral Videos"):
     with st.spinner("Fetching viral videos..."):
         try:
@@ -39,7 +52,6 @@ if st.button("🚀 Fetch Viral Videos"):
             progress = st.progress(0)
 
             for idx, keyword in enumerate(keywords):
-                st.write(f"🔎 Searching keyword: `{keyword}`")
                 search_params = {
                     "part": "snippet",
                     "q": keyword,
@@ -47,6 +59,7 @@ if st.button("🚀 Fetch Viral Videos"):
                     "order": "viewCount",
                     "publishedAfter": start_date,
                     "maxResults": max_results_per_keyword,
+                    "relevanceLanguage": "en",
                     "key": API_KEY
                 }
 
@@ -55,11 +68,6 @@ if st.button("🚀 Fetch Viral Videos"):
                     search_res.raise_for_status()
                     search_data = search_res.json()
                 except requests.RequestException as e:
-                    st.warning(f"Network/API error for '{keyword}': {e}")
-                    continue
-
-                if "error" in search_data:
-                    st.warning(f"API Error: {search_data['error']['message']}")
                     continue
 
                 items = search_data.get("items", [])
@@ -69,15 +77,15 @@ if st.button("🚀 Fetch Viral Videos"):
                 video_ids = [v["id"]["videoId"] for v in items if "videoId" in v["id"]]
                 channel_ids = [v["snippet"]["channelId"] for v in items]
 
-                # Fetch video stats
+                # Get video stats and duration
                 stats_res = requests.get(YOUTUBE_VIDEO_URL, params={
-                    "part": "statistics",
+                    "part": "statistics,contentDetails",
                     "id": ",".join(video_ids),
                     "key": API_KEY
                 }).json()
                 stats_dict = {v['id']: v for v in stats_res.get("items", [])}
 
-                # Fetch channel stats
+                # Get channel stats
                 channel_res = requests.get(YOUTUBE_CHANNEL_URL, params={
                     "part": "statistics",
                     "id": ",".join(channel_ids),
@@ -85,7 +93,7 @@ if st.button("🚀 Fetch Viral Videos"):
                 }).json()
                 channels_dict = {c['id']: c for c in channel_res.get("items", [])}
 
-                # Combine data
+                # Filter and combine data
                 for vid in items:
                     video_id = vid["id"]["videoId"]
                     channel_id = vid["snippet"]["channelId"]
@@ -95,9 +103,17 @@ if st.button("🚀 Fetch Viral Videos"):
                     if not stat or not chan:
                         continue
 
+                    # Long-form filter: only if duration > 4 min
+                    duration = stat["contentDetails"]["duration"]
+                    if "M" not in duration and "H" not in duration:
+                        continue  # no minutes or hours
+                    if "H" not in duration and int(duration.split("M")[0].replace("PT", "")) < 4:
+                        continue
+
                     title = vid["snippet"]["title"]
                     description = vid["snippet"].get("description", "")[:200]
                     video_url = f"https://www.youtube.com/watch?v={video_id}"
+
                     views = int(stat["statistics"].get("viewCount", 0))
                     likes = int(stat["statistics"].get("likeCount", 0))
                     subs = int(chan["statistics"].get("subscriberCount", 0))
@@ -109,26 +125,24 @@ if st.button("🚀 Fetch Viral Videos"):
                             "Title": title,
                             "Description": description,
                             "URL": video_url,
-                            "Views": views,
-                            "Likes": likes,
+                            "Views": human_format(views),
+                            "Likes": human_format(likes),
                             "Like/View %": like_ratio,
                             "Views/Sub": view_sub_ratio,
-                            "Subscribers": subs,
-                            "Keyword": keyword
+                            "Subscribers": human_format(subs),
                         })
 
                 progress.progress((idx + 1) / len(keywords))
 
-            # Show results
             if all_results:
-                sorted_results = sorted(all_results, key=lambda x: x["Views"], reverse=True)
+                sorted_results = sorted(all_results, key=lambda x: float(x["Views"].replace("k", "000").replace("M", "000000").replace(".", "")), reverse=True)
                 st.success(f"✅ Found {len(sorted_results)} viral videos!")
 
                 for res in sorted_results:
                     st.markdown(f"""
                     **🎬 Title:** {res['Title']}  
                     📅 **Views:** {res['Views']} 👍 **Likes:** {res['Likes']} 💯 **Like/View %:** {res['Like/View %']}%  
-                    📺 **Subscribers:** {res['Subscribers']} 📈 **Views/Sub:** {res['Views/Sub']} 🔑 **Keyword:** {res['Keyword']}  
+                    📺 **Subscribers:** {res['Subscribers']} 📈 **Views/Sub:** {res['Views/Sub']}  
                     🔗 [Watch Video]({res['URL']})  
                     ---
                     """)
