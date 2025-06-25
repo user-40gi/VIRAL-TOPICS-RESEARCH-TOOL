@@ -12,10 +12,12 @@ YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 st.set_page_config(layout="wide")
 st.title("YouTube Viral Topic Finder (True Crime Niche)")
 
+# Filters
 days = st.slider("Search videos from past days:", 1, 30, 7)
 min_subs, max_subs = st.slider("Channel subscriber range:", 1000, 100000, (1000, 50000), step=1000)
 max_results_per_keyword = st.slider("Max videos per keyword:", 1, 10, 5)
 
+# Injected keywords
 keywords = [
     "girl vanished — found after 7 years",
     "missing boy — found after a decade",
@@ -56,6 +58,7 @@ def days_ago(published_at_str):
     delta_days = (datetime.utcnow() - published_date).days
     return f"{delta_days} days ago"
 
+# Main logic
 if st.button("Fetch Viral Videos"):
     with st.spinner("Fetching viral videos..."):
         try:
@@ -75,13 +78,8 @@ if st.button("Fetch Viral Videos"):
                     "key": API_KEY
                 }
 
-                try:
-                    search_res = requests.get(YOUTUBE_SEARCH_URL, params=search_params)
-                    search_data = search_res.json()
-                except requests.RequestException:
-                    continue
-
-                items = search_data.get("items", [])
+                search_res = requests.get(YOUTUBE_SEARCH_URL, params=search_params)
+                items = search_res.json().get("items", [])
                 if not items:
                     continue
 
@@ -114,7 +112,11 @@ if st.button("Fetch Viral Videos"):
                     duration = stat["contentDetails"]["duration"]
                     if "M" not in duration and "H" not in duration:
                         continue
-                    if "H" not in duration and int(duration.split("M")[0].replace("PT", "")) < 4:
+                    try:
+                        minutes = int(duration.split("M")[0].replace("PT", ""))
+                        if minutes < 4 and "H" not in duration:
+                            continue
+                    except:
                         continue
 
                     title = vid["snippet"]["title"]
