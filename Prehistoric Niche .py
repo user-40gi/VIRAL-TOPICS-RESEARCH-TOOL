@@ -10,7 +10,7 @@ YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
 YOUTUBE_CHANNEL_URL = "https://www.googleapis.com/youtube/v3/channels"
 
 st.set_page_config(layout="wide")
-st.title("YouTube Viral Topic Finder (True Crime Niche)")
+st.title("YouTube Viral Topic Finder (Prehistoric Survival Niche)")
 
 # Filters
 days = st.slider("Search videos from past days:", 1, 30, 7)
@@ -19,31 +19,58 @@ max_results_per_keyword = st.slider("Max videos per keyword:", 1, 10, 5)
 
 # Injected keywords
 keywords = [
-    "girl vanished — found after 7 years",
-    "missing boy — found after a decade",
-    "toddler disappeared — found after 22 years",
-    "body found — after 15 years in attic",
-    "remains discovered — after 30 years in junkyard",
-    "found after years — behind church wall",
-    "police find — cold case body after 18 years",
-    "baby missing — found after 12 years in different state",
-    "hiker lost — found 9 years later near dam",
-    "fisherman pulls — remains found after 20 years",
-    "child went missing — found after years under shed",
-    "family vanished — found 25 years later by hiker",
-    "car found in lake — with body after 16 years",
-    "teen went missing — discovery made after 10 years",
-    "woman disappeared — oil rig finds body after 11 years",
-    "divers discover — old cold case remains",
-    "skeleton found — after decades in cave",
-    "murder weapon — found after 13 years behind stove",
-    "old backpack — found after 8 years in forest",
-    "school records — reveal missing girl after 27 years",
-    "missing persons", "cold case", "shocking discovery", "child disappeared",
-    "remains discovered", "found in attic", "found in basement", "hidden for years",
-    "never seen again", "solved 10 years later", "unsolved mystery", "skeletal remains",
-    "found behind wall", "hikers vanished", "shocking final clue", "haunting cold case",
-    "bike was found", "trip gone wrong", "forgotten child", "long missing finally found"
+    # Primary Keywords (High Priority)
+    "stone age survival",
+    "prehistoric humans",
+    "why you wouldn't survive",
+    "ancient human survival",
+    "paleolithic life",
+    "early humans documentary",
+    "stone age documentary",
+    "caveman survival",
+    "human evolution",
+    "primitive survival",
+
+    # Secondary Keywords (Medium Priority)
+    "neanderthal life",
+    "ice age survival",
+    "prehistoric animals",
+    "ancient civilizations",
+    "human origins",
+    "stone age tools",
+    "fire making ancient",
+    "hunter gatherer",
+    "bronze age",
+    "mesolithic period",
+
+    # Long-tail Keywords (Specific Topics)
+    "what if you lived in stone age",
+    "prehistoric humans vs modern humans",
+    "how cavemen survived winter",
+    "ancient human extinction",
+    "stone age daily life",
+    "prehistoric human diet",
+    "early human migration",
+    "caveman vs modern technology",
+    "prehistoric human society",
+    "ancient human discoveries",
+
+    # Additional Trending Keywords
+    "stone age life",
+    "caveman documentary",
+    "prehistoric survival",
+    "ancient humans documentary",
+    "paleolithic documentary",
+    "early human evolution",
+    "stone age people",
+    "primitive life",
+    "prehistoric life",
+    "ancient survival skills",
+    "caveman life",
+    "stone age civilization",
+    "prehistoric world",
+    "ancient human history",
+    "paleolithic humans"
 ]
 
 def human_format(num):
