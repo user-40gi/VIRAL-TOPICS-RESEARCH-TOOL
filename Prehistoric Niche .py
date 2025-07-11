@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta
 
-API_KEY = st.secrets["API_KEY"]
+API_KEY = st.secrets["AIzaSyAIKESiph66SzOWR9LJOjkgltJJJo9MJrM"]
 
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 YOUTUBE_VIDEO_URL = "https://www.googleapis.com/youtube/v3/videos"
